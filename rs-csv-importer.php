@@ -1,9 +1,10 @@
 <?php
 /*
-Plugin Name: Really Simple CSV Importer
+Plugin Name: Really Simple CSV Importer (Honors fork)
 Plugin URI: http://wordpress.org/plugins/really-simple-csv-importer/
 Description: Import posts, categories, tags, custom fields from simple csv file.
 Author: Takuro Hishikawa
+Fork Author: Angelo saraceno
 Author URI: https://en.digitalcube.jp/
 Text Domain: really-simple-csv-importer
 License: GPL version 2 or later - http://www.gnu.org/licenses/old-licenses/gpl-2.0.html
@@ -34,7 +35,7 @@ require dirname( __FILE__ ) . '/class-rscsv_import_post_helper.php';
  */
 if ( class_exists( 'WP_Importer' ) ) {
 class RS_CSV_Importer extends WP_Importer {
-	
+
 	/** Sheet columns
 	* @value array
 	*/
@@ -51,7 +52,7 @@ class RS_CSV_Importer extends WP_Importer {
 	function footer() {
 		echo '</div>';
 	}
-	
+
 	// Step 1
 	function greet() {
 		echo '<p>'.__( 'Choose a CSV (.csv) file to upload, then click Upload file and import.', 'really-simple-csv-importer' ).'</p>';
@@ -96,14 +97,14 @@ class RS_CSV_Importer extends WP_Importer {
 			echo '</p>';
 			return false;
 		}
-		
+
 		$this->id = (int) $file['id'];
 		$this->file = get_attached_file($this->id);
 		$result = $this->process_posts();
 		if ( is_wp_error( $result ) )
 			return $result;
 	}
-	
+
 	/**
 	* Insert post and postmeta using `RSCSV_Import_Post_Helper` class.
 	*
@@ -115,7 +116,7 @@ class RS_CSV_Importer extends WP_Importer {
 	* @return RSCSV_Import_Post_Helper
 	*/
 	public function save_post($post,$meta,$terms,$thumbnail,$is_update) {
-		
+
 		// Separate the post tags from $post array
 		if (isset($post['post_tags']) && !empty($post['post_tags'])) {
 			$post_tags = $post['post_tags'];
@@ -135,25 +136,25 @@ class RS_CSV_Importer extends WP_Importer {
 		} else {
 			$h = RSCSV_Import_Post_Helper::add($post);
 		}
-		
+
 		// Set post tags
 		if (isset($post_tags)) {
 			$h->setPostTags($post_tags);
 		}
-		
+
 		// Set meta data
 		$h->setMeta($meta);
-		
+
 		// Set terms
 		foreach ($terms as $key => $value) {
 			$h->setObjectTerms($key, $value);
 		}
-		
+
 		// Add thumbnail
 		if ($thumbnail) {
 			$h->addThumbnail($thumbnail);
 		}
-		
+
 		return $h;
 	}
 
@@ -167,23 +168,23 @@ class RS_CSV_Importer extends WP_Importer {
 			wp_import_cleanup($this->id);
 			return false;
 		}
-		
+
 		$is_first = true;
 		$post_statuses = get_post_stati();
-		
+
 		echo '<ol>';
-		
+
 		while (($data = $h->fgetcsv($handle)) !== FALSE) {
 			if ($is_first) {
 				$h->parse_columns( $this, $data );
 				$is_first = false;
 			} else {
 				echo '<li>';
-				
+
 				$post = array();
 				$is_update = false;
 				$error = new WP_Error();
-				
+
 				// (string) (required) post type
 				$post_type = $h->get_data($this,$data,'post_type');
 				if ($post_type) {
@@ -195,7 +196,7 @@ class RS_CSV_Importer extends WP_Importer {
 				} else {
 					echo __('Note: Please include post_type value if that is possible.', 'really-simple-csv-importer').'<br>';
 				}
-				
+
 				// (int) post id
 				$post_id = $h->get_data($this,$data,'ID');
 				$post_id = ($post_id) ? $post_id : $h->get_data($this,$data,'post_id');
@@ -238,7 +239,7 @@ class RS_CSV_Importer extends WP_Importer {
 				if ($post_name) {
 					$post['post_name'] = $post_name;
 				}
-				
+
 				// (login or ID) post_author
 				$post_author = $h->get_data($this,$data,'post_author');
 				if ($post_author) {
@@ -262,7 +263,7 @@ class RS_CSV_Importer extends WP_Importer {
 						unset($user);
 					}
 				}
-				
+
 				// (string) publish date
 				$post_date = $h->get_data($this,$data,'post_date');
 				if ($post_date) {
@@ -272,7 +273,7 @@ class RS_CSV_Importer extends WP_Importer {
 				if ($post_date_gmt) {
 					$post['post_date_gmt'] = date("Y-m-d H:i:s", strtotime($post_date_gmt));
 				}
-				
+
 				// (string) post status
 				$post_status = $h->get_data($this,$data,'post_status');
 				if ($post_status) {
@@ -280,7 +281,7 @@ class RS_CSV_Importer extends WP_Importer {
     					$post['post_status'] = $post_status;
     				}
 				}
-				
+
 				// (string) post password
 				$post_password = $h->get_data($this,$data,'post_password');
 				if ($post_password) {
@@ -292,31 +293,31 @@ class RS_CSV_Importer extends WP_Importer {
 				if ($post_content) {
 					$post['post_content'] = $post_content;
 				}
-				
+
 				// (string) post excerpt
 				$post_excerpt = $h->get_data($this,$data,'post_excerpt');
 				if ($post_excerpt) {
 					$post['post_excerpt'] = $post_excerpt;
 				}
-				
+
 				// (int) post parent
 				$post_parent = $h->get_data($this,$data,'post_parent');
 				if ($post_parent) {
 					$post['post_parent'] = $post_parent;
 				}
-				
+
 				// (int) menu order
 				$menu_order = $h->get_data($this,$data,'menu_order');
 				if ($menu_order) {
 					$post['menu_order'] = $menu_order;
 				}
-				
+
 				// (string) comment status
 				$comment_status = $h->get_data($this,$data,'comment_status');
 				if ($comment_status) {
 					$post['comment_status'] = $comment_status;
 				}
-				
+
 				// (string, comma separated) slug of post categories
 				$post_category = $h->get_data($this,$data,'post_category');
 				if ($post_category) {
@@ -325,16 +326,16 @@ class RS_CSV_Importer extends WP_Importer {
 						$post['post_category'] = wp_create_categories($categories);
 					}
 				}
-				
+
 				// (string, comma separated) name of post tags
 				$post_tags = $h->get_data($this,$data,'post_tags');
 				if ($post_tags) {
 					$post['post_tags'] = $post_tags;
 				}
-				
+
 				// (string) post thumbnail image uri
 				$post_thumbnail = $h->get_data($this,$data,'post_thumbnail');
-				
+
 				$meta = array();
 				$tax = array();
 
@@ -343,7 +344,7 @@ class RS_CSV_Importer extends WP_Importer {
 					if ($value !== false && isset($this->column_keys[$key])) {
 						// check if meta is custom taxonomy
 						if (substr($this->column_keys[$key], 0, 4) == 'tax_') {
-							// (string, comma divided) name of custom taxonomies 
+							// (string, comma divided) name of custom taxonomies
 							$customtaxes = preg_split("/,+/", $value);
 							$taxname = substr($this->column_keys[$key], 4);
 							$tax[$taxname] = array();
@@ -356,7 +357,7 @@ class RS_CSV_Importer extends WP_Importer {
 						}
 					}
 				}
-				
+
 				/**
 				 * Filter post data.
 				 *
@@ -399,9 +400,9 @@ class RS_CSV_Importer extends WP_Importer {
 				 * @param bool false
 				 */
 				$dry_run = apply_filters( 'really_simple_csv_importer_dry_run', false );
-				
+
 				if (!$error->get_error_codes() && $dry_run == false) {
-					
+
 					/**
 					 * Get Alternative Importer Class name.
 					 *
@@ -410,7 +411,7 @@ class RS_CSV_Importer extends WP_Importer {
 					 * @param string Class name to override Importer class. Default to null (do not override).
 					 */
 					$class = apply_filters( 'really_simple_csv_importer_class', null );
-					
+
 					// save post data
 					if ($class && class_exists($class,false)) {
 						$importer = new $class;
@@ -418,12 +419,12 @@ class RS_CSV_Importer extends WP_Importer {
 					} else {
 						$result = $this->save_post($post,$meta,$tax,$post_thumbnail,$is_update);
 					}
-					
+
 					if ($result->isError()) {
 						$error = $result->getError();
 					} else {
 						$post_object = $result->getPost();
-						
+
 						if (is_object($post_object)) {
 							/**
 							 * Fires adter the post imported.
@@ -434,35 +435,35 @@ class RS_CSV_Importer extends WP_Importer {
 							 */
 							do_action( 'really_simple_csv_importer_post_saved', $post_object );
 						}
-						
+
 						echo esc_html(sprintf(__('Processing "%s" done.', 'really-simple-csv-importer'), $post_title));
 					}
 				}
-				
+
 				// show error messages
 				foreach ($error->get_error_messages() as $message) {
 					echo esc_html($message).'<br>';
 				}
-				
+
 				echo '</li>';
 
 				wp_cache_flush();
 			}
 		}
-		
+
 		echo '</ol>';
 
 		$h->fclose($handle);
-		
+
 		wp_import_cleanup($this->id);
-		
+
 		echo '<h3>'.__('All Done.', 'really-simple-csv-importer').'</h3>';
 	}
 
 	// dispatcher
 	function dispatch() {
 		$this->header();
-		
+
 		if (empty ($_GET['step']))
 			$step = 0;
 		else
@@ -480,16 +481,16 @@ class RS_CSV_Importer extends WP_Importer {
 					echo $result->get_error_message();
 				break;
 		}
-		
+
 		$this->footer();
 	}
-	
+
 }
 
 // Initialize
 function really_simple_csv_importer() {
 	load_plugin_textdomain( 'really-simple-csv-importer', false, dirname( plugin_basename(__FILE__) ) . '/languages' );
-	
+
     $rs_csv_importer = new RS_CSV_Importer();
     register_importer('csv', __('CSV', 'really-simple-csv-importer'), __('Import posts, categories, tags, custom fields from simple csv file.', 'really-simple-csv-importer'), array ($rs_csv_importer, 'dispatch'));
 }
